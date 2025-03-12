@@ -1,0 +1,90 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+
+# Load the dataset
+df = pd.read_csv("E:\Housing.csv")
+
+
+# Convert categorical features to numeric
+df['mainroad'] = df['mainroad'].apply(lambda x: 1 if x == 'yes' else 0)
+df['guestroom'] = df['guestroom'].apply(lambda x: 1 if x == 'yes' else 0)
+df['basement'] = df['basement'].apply(lambda x: 1 if x == 'yes' else 0)
+df['hotwaterheating'] = df['hotwaterheating'].apply(lambda x: 1 if x == 'yes' else 0)
+df['airconditioning'] = df['airconditioning'].apply(lambda x: 1 if x == 'yes' else 0)
+df['prefarea'] = df['prefarea'].apply(lambda x: 1 if x == 'yes' else 0)
+df['furnishingstatus'] = df['furnishingstatus'].apply(
+    lambda x: 1 if x == 'furnished' else (2 if x == 'semi-furnished' else 0))
+
+# Handle missing values separately for numerical columns
+num_cols = [col for col in df.columns if df[col].dtype in ['int64', 'float64']]
+df[num_cols] = df[num_cols].apply(lambda x: x.fillna(x.median()), axis=0)
+
+# Features and target variable
+features = ['area', 'bedrooms', 'bathrooms', 'stories', 'mainroad', 'guestroom', 'basement', 
+            'hotwaterheating', 'airconditioning', 'parking', 'prefarea', 'furnishingstatus']
+X = df[features]
+y = df['price']
+
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Train the model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print(f'Mean Squared Error: {mse}')
+print(f'R-squared: {r2}')
+
+# Visualization
+plt.scatter(y_test, y_pred)
+plt.xlabel('Actual Prices')
+plt.ylabel('Predicted Prices')
+plt.title('Actual vs Predicted Prices')
+plt.show()
+
+# Prompt the user to enter new data
+print("Enter the following details to predict the house price:")
+area = float(input("Area: "))
+bedrooms = int(input("Bedrooms: "))
+bathrooms = int(input("Bathrooms: "))
+stories = int(input("Stories: "))
+mainroad = int(input("Mainroad (1 for yes, 0 for no): "))
+guestroom = int(input("Guestroom (1 for yes, 0 for no): "))
+basement = int(input("Basement (1 for yes, 0 for no): "))
+hotwaterheating = int(input("Hotwaterheating (1 for yes, 0 for no): "))
+airconditioning = int(input("Airconditioning (1 for yes, 0 for no): "))
+parking = int(input("Parking: "))
+prefarea = int(input("Prefarea (1 for yes, 0 for no): "))
+furnishingstatus = int(input("Furnishingstatus (1 for furnished, 2 for semi-furnished, 0 for unfurnished): "))
+
+# Create a new DataFrame with the input data
+new_data = pd.DataFrame({
+    'area': [area],
+    'bedrooms': [bedrooms],
+    'bathrooms': [bathrooms],
+    'stories': [stories],
+    'mainroad': [mainroad],
+    'guestroom': [guestroom],
+    'basement': [basement],
+    'hotwaterheating': [hotwaterheating],
+    'airconditioning': [airconditioning],
+    'parking': [parking],
+    'prefarea': [prefarea],
+    'furnishingstatus': [furnishingstatus]
+})
+
+# Predict house price for the new input data
+predicted_price = model.predict(new_data)
+print(f'Predicted House Price: {predicted_price[0]}')
+
