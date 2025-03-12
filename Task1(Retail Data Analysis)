@@ -1,0 +1,121 @@
+import pandas as pd
+
+df =pd.read_csv("E:\\Supermart Grocery Sales - Retail Analytics Dataset.csv")
+df
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df.dropna(inplace=True)  # Example: Remove missing values
+
+# 2. Descriptive Statistics
+mean_sales = df['Sales'].mean()
+median_sales = df['Sales'].median()
+mode_sales = df['Sales'].mode()[0]
+std_sales = df['Sales'].std()
+
+print(f'Mean Sales: {mean_sales}')
+print(f'Median Sales: {median_sales}')
+print(f'Mode Sales: {mode_sales}')
+print(f'Standard Deviation of Sales: {std_sales}')
+
+from statsmodels.tsa.seasonal import seasonal_decompose
+# 1. Time Series Analysis: Analyze sales trends over time using time series techniques
+
+# Resample the data to monthly frequency and sum sales
+monthly_sales = df['Sales'].resample('M').sum()
+
+print(monthly_sales)
+
+# Plot the time series
+plt.figure(figsize=(10, 5))
+plt.plot(monthly_sales, label='Monthly Sales')
+plt.title('Monthly Sales Trend')
+plt.xlabel('Date')
+plt.ylabel('Total Sales')
+plt.legend()
+plt.show()
+
+# Decompose the time series to analyze the trend, seasonality, and residuals
+decomposition = seasonal_decompose(monthly_sales, model='additive')
+fig = decomposition.plot()
+fig.set_size_inches(10, 8)
+plt.show()
+
+# Autocorrelation plot to check for patterns
+plt.figure(figsize=(10, 5))
+pd.plotting.autocorrelation_plot(monthly_sales)
+plt.title('Autocorrelation of Monthly Sales')
+plt.show()
+
+# 2. Customer and Product Analysis: Analyze customer demographics and purchasing behavior
+
+# Sales by Region
+region_sales = df.groupby('Region')['Sales'].sum()
+
+plt.figure(figsize=(10, 5))
+region_sales.plot(kind='bar', title='Total Sales by Region')
+plt.xlabel('Region')
+plt.ylabel('Total Sales')
+plt.show()
+
+# Sales by City (Top 10 cities)
+city_sales = df.groupby('City')['Sales'].sum()
+top_cities = city_sales.nlargest(10)
+
+plt.figure(figsize=(10, 5))
+top_cities.plot(kind='bar', title='Top 10 Cities by Sales')
+plt.xlabel('City')
+plt.ylabel('Total Sales')
+plt.show()
+
+# Sales by Category
+category_sales = df.groupby('Category')['Sales'].sum()
+
+plt.figure(figsize=(10, 5))
+category_sales.plot(kind='bar', title='Total Sales by Category')
+plt.xlabel('Category')
+plt.ylabel('Total Sales')
+plt.show()
+
+# Sales by Sub Category (Top 10 sub categories)
+sub_category_sales = df.groupby('Sub Category')['Sales'].sum()
+top_sub_categories = sub_category_sales.nlargest(10)
+
+plt.figure(figsize=(10, 5))
+top_sub_categories.plot(kind='bar', title='Top 10 Sub Categories by Sales')
+plt.xlabel('Sub Category')
+plt.ylabel('Total Sales')
+plt.show()
+
+# Discount vs Profit Analysis
+plt.figure(figsize=(10, 5))
+sns.scatterplot(data=df, x='Discount', y='Profit')
+plt.title('Discount vs Profit')
+plt.xlabel('Discount')
+plt.ylabel('Profit')
+plt.show()
+
+# 3. Visualization: Present insights through bar charts, line plots, and heatmaps
+
+# Example: Heatmap of sales data by Region and Category
+heatmap_data = df.pivot_table(values='Sales', index='Region', columns='Category', aggfunc='sum')
+plt.figure(figsize=(10, 5))
+sns.heatmap(heatmap_data, cmap='YlGnBu', annot=True)
+plt.title('Heatmap of Sales by Region and Category')
+plt.xlabel('Category')
+plt.ylabel('Region')
+plt.show()
+
+# 4. Recommendations: Provide actionable recommendations based on the EDA
+
+recommendations = """
+1. Focus marketing efforts on top-performing regions, cities, and product categories.
+2. Analyze sales trends to optimize inventory and supply chain management.
+3. Implement targeted promotions during peak sales periods identified in the time series analysis.
+4. Investigate the impact of discounts on profit to develop more effective discounting strategies.
+5. Consider expanding product offerings in high-performing sub categories.
+"""
+
+print('Actionable Recommendations:')
+print(recommendations)
