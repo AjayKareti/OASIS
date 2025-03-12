@@ -1,0 +1,104 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the datasets (make sure the paths are correct)
+df1 = pd.read_csv('E:\cc_info.csv')
+df2 = pd.read_csv('E:\\transactions.csv')
+
+# Display basic information about the datasets
+print("Credit Card Info Dataset:")
+print(df1.info())
+print(df1.describe())
+
+print("\nTransaction Info Dataset:")
+print(df2.info())
+print(df2.describe())
+
+# Check for missing values in both datasets
+print("Missing values in Credit Card Info Dataset:")
+print(df1.isnull().sum())
+
+print("\nMissing values in Transaction Info Dataset:")
+print(df2.isnull().sum())
+
+# Handle missing values (if any)
+df1 = df1.dropna()
+df2 = df2.dropna()
+
+# Merge the datasets on the credit_card column
+df = pd.merge(df1, df2, on='credit_card')
+
+# Display basic information about the merged dataset
+print("\nMerged Dataset:")
+print(df.info())
+print(df.describe())
+
+# Features and target variable (assuming 'transaction_dollar_amount' is related to fraud detection)
+features = ['credit_card_limit', 'transaction_dollar_amount']
+X = df[features]
+y = np.where(df['transaction_dollar_amount'] > 500, 1, 0)  # Adjusted threshold for example purposes
+
+# Check the class distribution
+print("Class distribution:")
+print(pd.Series(y).value_counts())
+
+
+# Standardize the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
+
+# Initialize models with class weights to handle imbalance
+models = {
+    "Logistic Regression": LogisticRegression(class_weight='balanced'),
+    "Decision Tree": DecisionTreeClassifier(class_weight='balanced')
+}
+
+# Train and evaluate models
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    print(f"Model: {name}")
+    print(classification_report(y_test, y_pred))
+    print(f"Accuracy: {accuracy_score(y_test, y_pred)}\n")
+
+# Confusion Matrix for the best performing model
+best_model_name = "Logistic Regression"  # Choose the best performing model
+best_model = models[best_model_name]
+y_pred_best = best_model.predict(X_test)
+conf_mat = confusion_matrix(y_test, y_pred_best)
+
+# Visualization of Confusion Matrix
+plt.figure(figsize=(10, 6))
+sns.heatmap(conf_mat, annot=True, fmt='d', cmap='Blues', xticklabels=[0, 1], yticklabels=[0, 1])
+plt.title(f'Confusion Matrix - {best_model_name}')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.show()
+
+# Real-time Monitoring (simulation) - User input for a new transaction
+print("Enter the details of the new transaction to predict fraud:")
+credit_card_limit = float(input("Credit Card Limit: "))
+transaction_dollar_amount = float(input("Transaction Dollar Amount: "))
+
+# Create a new DataFrame with the input data
+new_data = pd.DataFrame({
+    'credit_card_limit': [credit_card_limit],
+    'transaction_dollar_amount': [transaction_dollar_amount]
+})
+
+# Convert input to DataFrame and scale
+new_data_scaled = scaler.transform(new_data)
+
+# Predict fraud for the new transaction
+predicted_fraud = best_model.predict(new_data_scaled)
+print(f'Predicted Fraud (1 indicates fraud, 0 indicates not fraud): {predicted_fraud[0]}')
