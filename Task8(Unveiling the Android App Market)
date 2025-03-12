@@ -1,0 +1,134 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, precision_recall_curve
+import matplotlib.pyplot as plt
+import seaborn as sns
+from textblob import TextBlob
+
+df1 = pd.read_csv("E:\\apps.csv")
+df2 = pd.read_csv("E:\\user_reviews.csv")
+
+# Display basic information about the datasets
+print("Google Play Store Dataset:")
+print(df1.info())
+print(df1.describe())
+
+print("\nReviews Dataset:")
+print(df2.info())
+print(df2.describe())
+
+# Check for missing values in both datasets
+print("Missing values in Google Play Store Dataset:")
+print(df1.isnull().sum())
+
+print("\nMissing values in Reviews Dataset:")
+print(df2.isnull().sum())
+
+# Handle missing values (e.g., drop or fill)
+df1 = df1.dropna()
+df2 = df2.dropna()
+
+# Correct data types if necessary (e.g., convert ratings to float)
+df1['Rating'] = df1['Rating'].astype(float)
+
+# Clean and convert 'Installs' column to integers
+df1['Installs'] = df1['Installs'].astype(str).str.replace(',', '').str.replace('+', '').astype(int)
+
+# Ensure 'Price' column values are strings and clean the column
+df1['Price'] = df1['Price'].astype(str).str.replace('$', '').astype(float)
+
+# Features and target variable for quality analysis
+features = ['Reviews', 'Size', 'Installs', 'Price']
+X = df1[features]
+y = np.where(df1['Rating'] < 3, 1, 0)  # Dummy target for example purposes (apps with rating < 3 considered low quality)
+
+# Check the class distribution
+print("Class distribution:")
+print(pd.Series(y).value_counts())
+
+# Standardize the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
+
+# Initialize models with class weights to handle imbalance
+models = {
+    "Logistic Regression": LogisticRegression(class_weight='balanced'),
+    "Decision Tree": DecisionTreeClassifier(class_weight='balanced')
+}
+
+# Train and evaluate models
+best_model = None
+best_model_name = ""
+best_accuracy = 0
+
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Model: {name}")
+    print(classification_report(y_test, y_pred))
+    print(f"Accuracy: {accuracy}\n")
+
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
+        best_model_name = name
+        best_model = model
+
+# Confusion Matrix for the best performing model
+print(f"Best Model: {best_model_name} with Accuracy: {best_accuracy}")
+y_pred_best = best_model.predict(X_test)
+conf_mat = confusion_matrix(y_test, y_pred_best)
+
+# Visualization of Confusion Matrix
+plt.figure(figsize=(10, 6))
+sns.heatmap(conf_mat, annot=True, fmt='d', cmap='Blues', xticklabels=[0, 1], yticklabels=[0, 1])
+plt.title(f'Confusion Matrix - {best_model_name}')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.show()
+
+# Adjusting the threshold
+y_pred_prob = best_model.predict_proba(X_test)[:, 1]
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred_prob)
+
+# Find the best threshold (you can adjust this logic based on precision-recall tradeoff)
+best_threshold = thresholds[np.argmax(precision + recall)]
+
+print(f"Best Threshold: {best_threshold}")
+
+# Apply the new threshold
+y_pred_adjusted = (y_pred_prob >= best_threshold).astype(int)
+
+# Evaluate the model with the new threshold
+print(classification_report(y_test, y_pred_adjusted))
+print(f"Accuracy with adjusted threshold: {accuracy_score(y_test, y_pred_adjusted)}")
+
+# Real-time Monitoring (simulation) - User input for a new app
+print("Enter the details of the new app to analyze its quality:")
+reviews = int(input("Number of Reviews: "))
+size = float(input("Size (MB): "))
+installs = int(input("Number of Installs: "))
+price = float(input("Price ($): "))
+
+# Create a new DataFrame with the input data
+new_app_data = pd.DataFrame({
+    'Reviews': [reviews],
+    'Size': [size],
+    'Installs': [installs],
+    'Price': [price]
+})
+
+# Standardize the features
+new_app_data_scaled = scaler.transform(new_app_data)
+
+# Predict quality for the new app
+predicted_quality = best_model.predict(new_app_data_scaled)
+print(f'Predicted Quality (1 indicates low quality, 0 indicates high quality): {predicted_quality[0]}')
+
