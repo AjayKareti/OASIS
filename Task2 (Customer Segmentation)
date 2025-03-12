@@ -1,0 +1,51 @@
+#Importing necessary libraries
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import warnings
+warnings.filterwarnings("ignore")
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy.stats import pointbiserialr
+
+#Reading the data
+data = pd.read_csv('E:\ifood_df.csv')
+
+#Taking a look at the top 5 rows of the data
+data.head()
+
+# Step 2: Data Exploration and Cleaning # Checking for missing values 
+print(data.isnull().sum()) 
+# Handling missing values (example: filling with mean) 
+data.fillna(data.mean(), inplace=True)
+# Step 4: Customer Segmentation # Selecting features for clustering 
+features = data[['Income', 'MntWines', 'MntFruits', 'MntMeatProducts', 'MntFishProducts', 'MntSweetProducts', 'MntGoldProds', 'NumDealsPurchases', 'NumWebPurchases', 'NumCatalogPurchases', 'NumStorePurchases', 'NumWebVisitsMonth', 'Age']] 
+# Replace with actual features # Standardizing the features
+
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler() 
+features_scaled = scaler.fit_transform(features) 
+
+
+# Applying K-means clustering 
+from sklearn.cluster import KMeans
+
+kmeans = KMeans(n_clusters=5, random_state=42) 
+# Number of clusters can be adjusted 
+clusters = kmeans.fit_predict(features_scaled) 
+# Adding cluster labels to the original dataframe 
+data['Cluster'] = clusters
+
+# Step 5: Visualization # Scatter plot of customer segments 
+plt.figure(figsize=(10, 6)) 
+sns.scatterplot(data=data, x='Income', y='MntTotal', hue='Cluster', palette='viridis') 
+plt.title('Customer Segments') 
+plt.show()
+
+# Step 6: Insights and Recommendations # Analyzing characteristics of each segment 
+for i in range(5): 
+# Adjust based on number of clusters
+    segment = data[data['Cluster'] == i] 
+    print(f"Segment {i}:") 
+    print(segment.describe()) 
+    print("\n")
