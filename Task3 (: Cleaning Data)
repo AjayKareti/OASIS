@@ -1,0 +1,42 @@
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv('E:\AB_NYC_2019.csv')
+# Ensure columns are of the correct data type and handle conversion
+numeric_columns = ['price', 'minimum_nights', 'number_of_reviews', 'reviews_per_month', 'calculated_host_listings_count', 'availability_365']
+for col in numeric_columns:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
+
+# Checking for missing values after conversion
+print("\nMissing values after conversion:")
+print(df.isnull().sum())
+
+# Step 3: Missing Data Handling
+# Option 1: Drop rows with missing values
+df_cleaned = df.dropna()
+
+# Option 2: Impute missing values with mean (only for numeric columns)
+df_filled = df.copy()
+for col in numeric_columns:
+    df_filled[col].fillna(df[col].mean(), inplace=True)
+
+# Step 4: Duplicate Removal
+df_cleaned = df_cleaned.drop_duplicates()
+
+# Step 5: Standardization
+# Example: Standardizing numerical columns to z-scores
+df_cleaned[numeric_columns] = (df_cleaned[numeric_columns] - df_cleaned[numeric_columns].mean()) / df_cleaned[numeric_columns].std()
+
+# Step 6: Outlier Detection
+# Applying Z-score to each numerical column individually
+z_scores = df_cleaned[numeric_columns].apply(zscore)
+
+# Detecting outliers
+outliers_df = df_cleaned[(z_scores > 3).any(axis=1) | (z_scores < -3).any(axis=1)]
+
+# Step 7: Removing outliers
+df_cleaned = df_cleaned[~((z_scores > 3).any(axis=1) | (z_scores < -3).any(axis=1))]
+
+# Final Cleaned Dataset
+print("Cleaned Dataset:")
+df_cleaned 
