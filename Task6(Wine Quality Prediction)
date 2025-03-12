@@ -1,0 +1,81 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import SGDClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, accuracy_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+
+# Load the dataset
+df = pd.read_csv(r'C:\Users\ajayk\Downloads\WineQT.csv')
+# Data cleaning (handle missing values)
+df = df.dropna()  # Removing missing values for simplicity
+
+# Features and target variable
+features = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 
+            'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density', 
+            'pH', 'sulphates', 'alcohol']
+X = df[features]
+y = df['quality']
+
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Initialize models
+models = {
+    "Random Forest": RandomForestClassifier(),
+    "Stochastic Gradient Descent": SGDClassifier(),
+    "Support Vector Classifier": SVC()
+}
+
+# Train and evaluate models
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    print(f"Model: {name}")
+    print(classification_report(y_test, y_pred))
+    print(f"Accuracy: {accuracy_score(y_test, y_pred)}\n")
+
+# Visualization: Interactive Actual vs Predicted for the Random Forest model using Plotly
+y_pred_rf = models["Random Forest"].predict(X_test)
+fig = px.scatter(x=y_test, y=y_pred_rf, labels={'x': 'Actual Quality', 'y': 'Predicted Quality'},
+                 title='Interactive Actual vs Predicted Wine Quality (Random Forest)')
+fig.update_traces(marker=dict(size=10, opacity=0.8, line=dict(width=2, color='DarkSlateGrey')),
+                  selector=dict(mode='markers'))
+fig.show()
+
+# Prompt the user to enter new data for prediction
+print("Enter the following features to predict the wine quality:")
+fixed_acidity = float(input("Fixed Acidity: "))
+volatile_acidity = float(input("Volatile Acidity: "))
+citric_acid = float(input("Citric Acid: "))
+residual_sugar = float(input("Residual Sugar: "))
+chlorides = float(input("Chlorides: "))
+free_sulfur_dioxide = float(input("Free Sulfur Dioxide: "))
+total_sulfur_dioxide = float(input("Total Sulfur Dioxide: "))
+density = float(input("Density: "))
+pH = float(input("pH: "))
+sulphates = float(input("Sulphates: "))
+alcohol = float(input("Alcohol: "))
+
+# Create a new DataFrame with the input data
+new_data = pd.DataFrame({
+    'fixed acidity': [fixed_acidity],
+    'volatile acidity': [volatile_acidity],
+    'citric acid': [citric_acid],
+    'residual sugar': [residual_sugar],
+    'chlorides': [chlorides],
+    'free sulfur dioxide': [free_sulfur_dioxide],
+    'total sulfur dioxide': [total_sulfur_dioxide],
+    'density': [density],
+    'pH': [pH],
+    'sulphates': [sulphates],
+    'alcohol': [alcohol]
+})
+
+# Predict wine quality for the new input data using the Random Forest model
+predicted_quality = models["Random Forest"].predict(new_data)
+print(f'Predicted Wine Quality: {predicted_quality[0]}')
